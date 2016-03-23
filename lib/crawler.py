@@ -122,11 +122,9 @@ def get_dlinks(source_url):
 
             result.append(tuple(info.values()))
         time.sleep(_TIME_DELTA)
-        if i == 10:
-            break
     curl.close()
 
-    return result
+    save_to_file(result, file_name='%s.txt' % title)
 
 
 def save_to_file(d_links, file_name):
@@ -142,7 +140,7 @@ def save_to_file(d_links, file_name):
         base_dir = 'out/'
         if not os.path.exists(base_dir):
             os.mkdir(base_dir)
-        file_object = open(base_dir + file_name, 'a')
+        file_object = open(base_dir + file_name, 'w')
 
         for item in d_links:
             file_object.write('\t'.join(item).encode('utf8'))

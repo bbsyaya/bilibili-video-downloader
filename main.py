@@ -15,6 +15,4 @@ import lib.crawler as cl
 if __name__ == '__main__':
     # 测试用例
     s_url = "http://www.bilibili.com/video/av3277237/index_2.html"
-    file_name = "bilibili.txt"
-    dlinks= cl.get_dlinks(s_url)
-    cl.save_to_file(dlinks, file_name)
+    cl.get_dlinks(s_url)
