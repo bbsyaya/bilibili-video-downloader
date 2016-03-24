@@ -18,8 +18,11 @@ refer_path = "http://www.bilibili.com"
 # 匹配地址
 _VALID_URL = r'https?://www\.bilibili\.(?:tv|com)/video/av(?P<id>\d+)(?:/index_(?P<page_num>\d+).html)?'
 
+# 视频格式
+_VIDEO_EXT = '.flv'
+
 # 缓冲时间 (单位: 秒)
-_TIME_DELTA = 10
+_TIME_DELTA = 3
 
 
 def get_dlinks(source_url):
@@ -51,6 +54,7 @@ def get_dlinks(source_url):
     total_pages = view_data['pages'] or 0
     # print total_pages
     for i in xrange(0, total_pages):
+        print 'start crawler %s page' % (i + 1)
         _json_url = 'http://api.bilibili.com/view?type=json&appkey=8e9fc618fbd41e28&id=%s&page=%s' % (video_id, i + 1)
         buffers = StringIO()
         target_url = _json_url
@@ -94,14 +98,14 @@ def get_dlinks(source_url):
 
             entries.append({
                 # 'id': '%s_part%s' % (cid, durl.find('./order').text),
-                'title': title + str(i + 1),
+                'title': title + str(i + 1) + _VIDEO_EXT,
                 # 'duration': durl.find('./length').text,
                 'formats': formats,
             })
 
         info = {
             # 'id': cid,
-            'title': title + str(i + 1),
+            'title': title + str(i + 1) + _VIDEO_EXT,
             # 'description': view_data.get('description'),
             # 'thumbnail': view_data.get('pic'),
             # 'uploader': view_data.get('author'),
@@ -119,13 +123,12 @@ def get_dlinks(source_url):
                 # 'id': video_id,
                 'entries': entries,
             })
-
             result.append(tuple(info.values()))
         time.sleep(_TIME_DELTA)
     curl.close()
 
     save_to_file(result, file_name='%s.txt' % title)
-
+    print 'done'
 
 def save_to_file(d_links, file_name):
     """
@@ -143,7 +146,7 @@ def save_to_file(d_links, file_name):
         file_object = open(base_dir + file_name, 'w')
 
         for item in d_links:
-            file_object.write('\t'.join(item).encode('utf8'))
+            file_object.write('#'.join(item).encode('utf8'))
             file_object.write('\n')
         file_object.close()
     except IOError:
