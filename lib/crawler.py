@@ -17,12 +17,17 @@ refer_path = "http://www.bilibili.com"
 
 # 匹配地址
 _VALID_URL = r'https?://www\.bilibili\.(?:tv|com)/video/av(?P<id>\d+)(?:/index_(?P<page_num>\d+).html)?'
+_JSON_URL = 'http://api.bilibili.com/view?type=json&appkey=8e9fc618fbd41e28&id=%s&page=%s'
+_XML_URL = 'http://interface.bilibili.com/v_cdn_play?appkey=8e9fc618fbd41e28&cid=%s'
 
 # 视频格式
 _VIDEO_EXT = '.flv'
 
 # 缓冲时间 (单位: 秒)
 _TIME_DELTA = 3
+
+# 文件名过滤
+_VALID_FILE_NAME = r"[\/\\0\\\:\*\?\"\<\>\|]"
 
 
 def get_dlinks(source_url):
@@ -37,12 +42,11 @@ def get_dlinks(source_url):
     video_id = mobj.group('id')
     page_num = mobj.group('page_num') or '1'
 
-    _json_url = 'http://api.bilibili.com/view?type=json&appkey=8e9fc618fbd41e28&id=%s&page=%s' % (video_id, page_num)
+    _json_url = _JSON_URL % (video_id, page_num)
     curl = pycurl.Curl()
     curl.setopt(pycurl.USERAGENT, user_agent)
     curl.setopt(pycurl.REFERER, refer_path)
 
-    # 获取str类型的数据
     buffers = StringIO()
     target_url = _json_url
     curl.setopt(pycurl.URL, target_url)
@@ -55,7 +59,7 @@ def get_dlinks(source_url):
     # print total_pages
     for i in xrange(0, total_pages):
         print 'start crawler %s page' % (i + 1)
-        _json_url = 'http://api.bilibili.com/view?type=json&appkey=8e9fc618fbd41e28&id=%s&page=%s' % (video_id, i + 1)
+        _json_url = _JSON_URL % (video_id, i + 1)
         buffers = StringIO()
         target_url = _json_url
         curl.setopt(pycurl.URL, target_url)
@@ -65,9 +69,9 @@ def get_dlinks(source_url):
         buffers.close()
         view_data = json.loads(body)
         cid = view_data['cid']
-        title = view_data['title']
+        title = re.sub(_VALID_FILE_NAME, '', view_data['title'])
         # print title, cid, i+1
-        _xml_url = 'http://interface.bilibili.com/v_cdn_play?appkey=8e9fc618fbd41e28&cid=%s' % cid
+        _xml_url = _XML_URL % cid
         target_url = _xml_url
         buffers = StringIO()
         curl.setopt(pycurl.URL, target_url)
@@ -127,8 +131,9 @@ def get_dlinks(source_url):
         time.sleep(_TIME_DELTA)
     curl.close()
 
-    save_to_file(result, file_name='%s.txt' % title)
+    save_to_file(result, '%s.txt' % title)
     print 'done'
+
 
 def save_to_file(d_links, file_name):
     """
